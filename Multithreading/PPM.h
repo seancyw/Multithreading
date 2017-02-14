@@ -25,7 +25,16 @@ public:
 
 	//write PPM image to filename
 	void write(const std::string & fileName);
+
+	unsigned int getHeight() const;
+	unsigned int getWidth() const;
+	unsigned int getMaximumColumns() const;
+	unsigned int getSize() const;
 	
+	std::vector< unsigned char > getRValue() const;
+	std::vector< unsigned char > getGValue() const;
+	std::vector< unsigned char > getBValue() const;
+
 private:
 	bool isAllocated;
 	void initialize();

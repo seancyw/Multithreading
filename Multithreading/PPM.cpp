@@ -111,7 +111,7 @@ void PPM::write(const std::string & fileName)
 	//Initialize the stream
 	std::ofstream output(fileName.c_str(), std::ios::out | std::ios::binary);
 
-	if (output.is_open) {
+	if (output.is_open()) {
 
 		output << "P6\n";
 		output << _width;
@@ -142,4 +142,39 @@ void PPM::initialize()
 	_width         = 0;
 	_height        = 0;
 	_maximumColumn = 255;
+}
+
+unsigned int PPM::getHeight() const
+{
+	return _height;
+}
+
+unsigned int PPM::getWidth() const
+{
+	return _width;
+}
+
+unsigned int PPM::getMaximumColumns() const
+{
+	return _maximumColumn;
+}
+
+unsigned int PPM::getSize() const
+{
+	return _size;
+}
+
+std::vector< unsigned char > PPM::getRValue() const
+{
+	return _r;
+}
+
+std::vector< unsigned char > PPM::getGValue() const
+{
+	return _g;
+}
+
+std::vector< unsigned char > PPM::getBValue() const
+{
+	return _b;
 }
