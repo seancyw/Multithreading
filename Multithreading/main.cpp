@@ -3,6 +3,8 @@
 #include <ctime>
 #include <vector>
 #include <string>
+#include <mutex>
+#include <atomic>
 #include "PPM.h"
 
 //Program reference from https://github.com/sol-prog/threads/blob/master/image_processing/ppm_05.cpp
@@ -212,7 +214,7 @@ void tst(PPM & image, PPM & image2, int left, int right)
 	}
 }
 
-int main()
+int PPMmain()
 {
 	std::string fileName = std::string("someFile.ppm");
 
@@ -249,6 +251,55 @@ int main()
 
 	//Save the result
 	image2.write("test2.ppm");
+
+	std::cin.ignore();
+
+	return 0;
+}
+
+//Threads Synchronization
+std::mutex barrier;
+
+void dotProducts(const std::vector<int> & v1, const std::vector<int>& v2, std::atomic< int >& result, int L, int R)
+{
+	int partialSum = 0;
+	for (int i = L; i < R; ++i)
+		partialSum += v1[i] * v2[i];
+
+	std::lock_guard<std::mutex> blockThreadsUntilFinishJob(barrier);
+	result += partialSum;
+}
+
+int main()
+{
+	int totalElements = 100000;
+	int threadNo = 2;
+	
+	//Allows safe concurrent reading/writing, and synchronizatio
+	//is done under the hood
+	std::atomic<int> result = 0;
+
+	std::vector<std::thread> threads;
+
+	//Fill two vectors with some constant values for a quick verification
+	// v1={1,1,1,1,...,1}
+	// v2={2,2,2,2,...,2}
+	// The result of the dot_product should be 200000 for this particular case
+	std::vector<int> v1(totalElements, 1), v2(totalElements, 2);
+
+	//split totalElements into threadNo parts
+	std::vector<int> limits = bounds(threadNo, totalElements);
+
+	//Launch nr threads
+	for (int i = 0; i < threadNo; ++i)
+		threads.push_back(std::thread(dotProducts, std::ref(v1), std::ref(v2), std::ref(result), limits[i], limits[i + 1]));
+
+	//Join the thread with main threads
+	for (auto &id : threads)
+		id.join();
+
+	//Print the result
+	std::cout << result << std::endl;
 
 	std::cin.ignore();
 
