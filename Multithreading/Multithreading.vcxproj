@@ -122,6 +122,8 @@
     <ClCompile Include="PPM.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Lesson2.h" />
+    <ClInclude Include="Lesson3.h" />
     <ClInclude Include="PPM.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

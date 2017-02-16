@@ -26,5 +26,11 @@
     <ClInclude Include="PPM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lesson3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lesson2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

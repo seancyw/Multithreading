@@ -5,6 +5,9 @@
 #include <string>
 #include <mutex>
 #include <atomic>
+#include <fstream>
+#include <deque>
+#include "Lesson3.h"
 #include "PPM.h"
 
 //Program reference from https://github.com/sol-prog/threads/blob/master/image_processing/ppm_05.cpp
@@ -270,7 +273,7 @@ void dotProducts(const std::vector<int> & v1, const std::vector<int>& v2, std::a
 	result += partialSum;
 }
 
-int main()
+int dotProductsmain()
 {
 	int totalElements = 100000;
 	int threadNo = 2;
@@ -303,5 +306,48 @@ int main()
 
 	std::cin.ignore();
 
+	return 0;
+}
+
+int main()
+{
+	int x;
+	
+	std::promise<int> p;
+	std::future<int> f = p.get_future();
+	
+	//use share_future if there are more than 1 future.get is running
+	//for the functions and change the arguments from pass by references to
+	//pass by value
+	//Example: std::future<int> fu = std::async(std::launch::async, factorial, sharedFuture);
+	//std::shared_future<int> sharedFuture = f.share();
+
+	//async is a function and it return future
+	//future is a channel where result can be get from child thread
+	//std::future<int> fu = std::async(factorial, 4);
+	
+	//std::launch::deferred will not create a new thread until fu.get is called
+	//where it will invokes factorial function and return value in one thread
+	//std::launch::async will create a new thread
+	//By default, the parameters is std::launch::deferred | std::launch::async which depends
+	//on user implementation to decide whether to create a new thread
+	//std::future<int> fu = std::async(std::launch::async, factorial);
+	std::future<int> fu = std::async(std::launch::async, factorial, std::ref(f));
+	
+	//do something else
+	std::this_thread::sleep_for(std::chrono::microseconds(1));
+	p.set_value(4);
+
+	//if the promise if broken, exception: std::future_errc::broken_promise will be invoke
+	//p.set_exception(std::make_exception_ptr(std::runtime_error("To err is human")));
+	
+	//fu.get will wait until child thread and return value from child
+	//thread
+	//it will only able to get the value once
+	x = fu.get();
+
+	std::cout << "Get from child: " << x << std::endl;
+
+	std::cin.ignore();
 	return 0;
 }
