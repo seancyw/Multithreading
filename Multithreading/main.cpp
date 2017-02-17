@@ -8,6 +8,7 @@
 #include <fstream>
 #include <deque>
 #include "Lesson3.h"
+#include "Lesson4.h"
 #include "PPM.h"
 
 //Program reference from https://github.com/sol-prog/threads/blob/master/image_processing/ppm_05.cpp
@@ -309,7 +310,7 @@ int dotProductsmain()
 	return 0;
 }
 
-int main()
+int Lesson3main()
 {
 	int x;
 	
@@ -350,4 +351,124 @@ int main()
 
 	std::cin.ignore();
 	return 0;
+}
+
+void foo(int x) {}
+
+std::deque<std::packaged_task<int()> > task_q;
+std::mutex mu;
+std::condition_variable conditional;
+
+void thread_1()
+{
+	std::packaged_task<int()> t;
+
+	{
+		std::unique_lock<std::mutex> locker(mu);
+		
+		conditional.wait(locker, []() {return !task_q.empty(); });
+		t = std::move(task_q.front());
+		task_q.pop_front();
+	}
+	t();
+}
+
+int Lesson4main()
+{
+	//Using callable object
+	//A a;
+	//
+	////create copy of a() in a different thread;
+	//std::thread t1(a, 6);
+	//
+	////create a() in a different thread
+	//std::thread t2(std::ref(a), 6);
+	//
+	////create a temporary A
+	//std::thread t3(A(), 6);
+	//
+	//std::thread t4([](int x) {return x*x; }, 6);
+	//
+	//std::thread t5(foo, 7);
+	//
+	////copy of a.f function with a.f(8, 'w')
+	//std::thread t6(&A::f, a, 8, 'w');
+	//
+	////a.f function with a.f(8, 'w')
+	//std::thread t7(&A::f, &a, 8, 'w');
+	//
+	//// a is no longer usable in main thread
+	//std::thread t8(std::move(a), 6);
+
+	//using package_task
+
+	//std::packaged_task<int(int)> t(factorial2);
+	//use bind to create a function object to pass in the parameters
+	//to the constructors
+	//std::packaged_task<int()> t(std::bind(factorial2, 6));
+
+	std::thread t1(thread_1);
+	std::packaged_task<int()> t(std::bind(factorial2, 6));
+	std::future<int> fu = t.get_future();
+	
+	{
+		std::lock_guard<std::mutex> locker(mu);
+		task_q.push_back(std::move(t));
+	}
+
+	conditional.notify_one();
+
+	std::cout << fu.get();
+
+	//to get value from packaged_task
+	//int x = t.get_future().get();
+	t1.join();
+
+	std::cin.ignore();
+	return 0;
+}
+
+
+int main()
+{
+	//Time constraint in thread library
+	//Thread
+	std::thread t1(factorial2, 6);
+	std::this_thread::sleep_for(std::chrono::microseconds(3));
+	std::chrono::steady_clock::time_point timepoint = std::chrono::steady_clock::now() + std::chrono::microseconds(4);
+	std::this_thread::sleep_until(timepoint);
+
+	//Mutex - to synchronize the data access
+	std::mutex mu;
+	std::lock_guard<std::mutex> locker(mu);
+	std::unique_lock<std::mutex> locker2(mu);
+	
+	//return if the mutex cannot be lock
+	locker2.try_lock();
+	locker2.try_lock_for(std::chrono::nanoseconds(500));
+	locker2.try_lock_until(timepoint);
+
+
+	//condition variables
+	//to synchronize execution order of thread
+	std::condition_variable conditional;
+	conditional.wait_for(locker2, std::chrono::microseconds(2));
+	conditional.wait_until(locker2, timepoint);
+
+	//Future and promise
+	std::promise<int> p;
+	std::future<int> f = p.get_future();
+	f.wait();
+	f.wait_for(std::chrono::microseconds(2));
+	f.wait_until(timepoint);
+
+	//async
+	std::future<int> fu = std::async(factorial, 6);
+
+	//package task
+	//can be run with function signatures
+	std::packaged_task<int(int)> t(factorial2);
+	std::future<int> fu2 = t.get_future();
+
+	t(6);
 }
